@@ -209,10 +209,9 @@ python scripts/python/validate_samplesheet.py metadata/samplesheet.csv
 
 ---
 
-## 8. Quality Control Execution (Phase 4)
+## 8. Pipeline Execution (Phases 4 & 5)
 
-Raw read quality profiling is executed via FastQC and aggregated with MultiQC:
-
+### Quality Control (Phase 4):
 ```bash
 # 1. Run FastQC across raw FASTQ files
 bash scripts/run_fastqc.sh --input data/raw --output results/fastqc/raw --threads 4
@@ -223,7 +222,20 @@ python scripts/python/summarize_fastqc.py --input-dir results/fastqc/raw --outpu
 # 3. Aggregate all QC reports into an interactive MultiQC dashboard
 bash scripts/run_multiqc.sh --input results/fastqc/raw --output results/multiqc/raw_fastqc
 ```
-For comprehensive interpretation guidelines on Phred scores, GC bias, and duplication metrics, refer to [`docs/qc.md`](docs/qc.md).
+For interpretation guidelines on Phred scores, GC bias, and duplication metrics, see [`docs/qc.md`](docs/qc.md).
+
+### Read Preprocessing & Trimming (Phase 5):
+```bash
+# 1. Run fastp adapter trimming and quality filtering (Q >= 20, min length >= 30 bp)
+bash scripts/run_fastp.sh --samplesheet metadata/samplesheet.csv --out-fastq data/processed --out-report results/fastp --threads 4
+
+# 2. Extract fastp before/after quality metrics into a tabular summary
+python scripts/python/summarize_fastp.py --input-dir results/fastp --output results/fastp/fastp_summary.tsv
+
+# 3. Run post-trimming FastQC on cleaned reads
+bash scripts/run_fastqc.sh --input data/processed --output results/fastqc/clean --threads 4
+```
+For comprehensive preprocessing principles and poly-G clipping documentation, see [`docs/preprocessing.md`](docs/preprocessing.md).
 
 ---
 
