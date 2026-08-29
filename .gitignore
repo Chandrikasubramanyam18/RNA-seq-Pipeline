@@ -1,0 +1,131 @@
+# ==============================================================================
+# RNA-seq Pipeline .gitignore
+# Prevents large sequencing files, alignments, and temporary runtime artifacts
+# from being committed to Git version control.
+# ==============================================================================
+
+# --- Nextflow Work & Cache Directories ---
+.nextflow/
+.nextflow.log*
+work/
+.nf-test/
+
+# --- Large Biological / Sequencing Data Formats ---
+# Raw and trimmed sequencing reads
+*.fastq
+*.fastq.gz
+*.fq
+*.fq.gz
+
+# Alignments and genomic index files
+*.sam
+*.bam
+*.bai
+*.cram
+*.crai
+*.bed
+*.bw
+*.bigwig
+*.wig
+
+# Reference genomes and large annotations
+*.fasta
+*.fa
+*.fna
+*.fa.gz
+*.fasta.gz
+*.gtf.gz
+*.gff.gz
+*.gff3.gz
+*.2bit
+
+# Alignment indexes (STAR, Bowtie2, HISAT2, Salmon, Kallisto)
+*.bt2
+*.ht2
+*Genome
+*SA
+*SAindex
+*chrLength.txt
+*chrName.txt
+*chrNameLength.txt
+*chrStart.txt
+*GenomeInfo.txt
+*sjdbList.fromGTF.out.tab
+*sjdbList.out.tab
+*transcriptome.index/
+
+# Quantifications & Big matrix intermediates (keep directory structure via .gitkeep)
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/reference/*
+!data/reference/.gitkeep
+
+# Results directory (generated pipeline outputs should be tracked via release logs/reports)
+results/*
+!results/**/.gitkeep
+
+# --- Python / Jupyter Environment ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints
+
+# --- R Environment ---
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+.Rproj.user/
+
+# --- Containers & Package Managers ---
+*.sif
+*.simg
+*.tar.gz
+*.tgz
+*.zip
+.conda/
+conda-bld/
+
+# --- Operating System & Editor Artifacts ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
+*~
+*.swp
+*.swo
+
+# VS Code specific (allow tracked workspace settings, ignore personal cache)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/extensions.json
