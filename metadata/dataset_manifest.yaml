@@ -1,0 +1,83 @@
+accession: "GSE52778"
+bioproject: "PRJNA229998"
+sra_study: "SRP033325"
+organism: "Homo sapiens"
+taxonomy_id: 9606
+study: "RNA-Seq Transcriptome Profiling Identifies CRISPLD2 as a Glucocorticoid Responsive Gene"
+publication: "doi:10.1371/journal.pone.0099625"
+platform: "Illumina HiSeq 2000"
+library_strategy: "RNA-Seq"
+library_selection: "polyA"
+library_layout: "PAIRED"
+read_length: 63
+reference_genome: "GRCh38"
+annotation_source: "GENCODE v44 / Ensembl 110"
+source: "NCBI GEO / ENA SRA"
+download_date: null
+
+samples:
+  - sample_id: "C1"
+    run_id: "SRR1039508"
+    gsm_id: "GSM1275862"
+    condition: "control"
+    donor: "N61311"
+    replicate: 1
+    fastq_1_url: "ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR103/008/SRR1039508/SRR1039508_1.fastq.gz"
+    fastq_2_url: "ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR103/008/SRR1039508/SRR1039508_2.fastq.gz"
+    md5_r1: "caec3ceea460dfde2b79e2c60de8f5d0"
+    md5_r2: "8c35272a8cbe22f28383f982424fa752"
+
+  - sample_id: "T1"
+    run_id: "SRR1039509"
+    gsm_id: "GSM1275863"
+    condition: "treatment"
+    donor: "N61311"
+    replicate: 1
+    fastq_1_url: "ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR103/009/SRR1039509/SRR1039509_1.fastq.gz"
+    fastq_2_url: "ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR103/009/SRR1039509/SRR1039509_2.fastq.gz"
+    md5_r1: "740dfa3006dae2a77f985098ff3ea534"
+    md5_r2: "c463f8ec4e1fcf6c6f71b9c9f0a202d5"
+
+  - sample_id: "C2"
+    run_id: "SRR1039512"
+    gsm_id: "GSM1275866"
+    condition: "control"
+    donor: "N052611"
+    replicate: 2
+    fastq_1_url: "ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR103/002/SRR1039512/SRR1039512_1.fastq.gz"
+    fastq_2_url: "ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR103/002/SRR1039512/SRR1039512_2.fastq.gz"
+    md5_r1: "c9c2ff14eb916f1d8c116c4fa2eb4ef6"
+    md5_r2: "3c36c2ef6a85859ca071804ba014c278"
+
+  - sample_id: "T2"
+    run_id: "SRR1039513"
+    gsm_id: "GSM1275867"
+    condition: "treatment"
+    donor: "N052611"
+    replicate: 2
+    fastq_1_url: "ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR103/003/SRR1039513/SRR1039513_1.fastq.gz"
+    fastq_2_url: "ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR103/003/SRR1039513/SRR1039513_2.fastq.gz"
+    md5_r1: "c9a2d6771d9d94943fcf3a1e3895e69e"
+    md5_r2: "ef1356fcfd5843445e9942a73c1d9f82"
+
+  - sample_id: "C3"
+    run_id: "SRR1039516"
+    gsm_id: "GSM1275870"
+    condition: "control"
+    donor: "N080611"
+    replicate: 3
+    fastq_1_url: "ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR103/006/SRR1039516/SRR1039516_1.fastq.gz"
+    fastq_2_url: "ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR103/006/SRR1039516/SRR1039516_2.fastq.gz"
+    md5_r1: "a99859f972b226e6a17b078fb8fa8d3c"
+    md5_r2: "38927aa8a666bf0ff48ff70c5ff9c3a3"
+
+  - sample_id: "T3"
+    run_id: "SRR1039517"
+    gsm_id: "GSM1275871"
+    condition: "treatment"
+    donor: "N080611"
+    replicate: 3
+    fastq_1_url: "ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR103/007/SRR1039517/SRR1039517_1.fastq.gz"
+    fastq_2_url: "ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR103/007/SRR1039517/SRR1039517_2.fastq.gz"
+    md5_r1: "b1fa8514101e4a113ecaa68a5c3fc6cf"
+    md5_r2: "aaec342371e721531e2adadceab8e8fe"

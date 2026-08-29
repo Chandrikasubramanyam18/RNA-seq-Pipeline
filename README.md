@@ -157,13 +157,49 @@ rnaseq-pipeline/
 
 ## 5. Installation & Environment Setup
 
-*(Will be documented in detail in Phase 2)*
+The computational environment is managed through Conda/Mamba using pinned dependencies defined in [`envs/rnaseq.yml`](envs/rnaseq.yml).
+
+### Quick Setup:
+```bash
+# 1. Create environment
+mamba env create -f envs/rnaseq.yml
+
+# 2. Activate environment
+conda activate rnaseq-pipeline
+
+# 3. Verify environment health
+bash scripts/check_environment.sh
+python scripts/python/check_environment.py
+```
+For detailed Windows WSL2 instructions, refer to [`docs/environment_setup.md`](docs/environment_setup.md).
 
 ---
 
 ## 6. Dataset & Sample Metadata
 
-*(Will be documented in detail in Phase 3)*
+This pipeline uses the benchmark **GSE52778** human airway smooth muscle (ASM) RNA-seq study (Himes et al., *PLoS ONE* 2014) investigating glucocorticoid response (Dexamethasone treatment vs untreated control across 3 biological donor cell lines).
+
+* **Organism**: *Homo sapiens* (GRCh38)
+* **Design**: 3 Control vs 3 Treatment replicates (Paired-end, $2 \times 63$ bp)
+* **Metadata Manifest**: [`metadata/dataset_manifest.yaml`](metadata/dataset_manifest.yaml)
+* **Samplesheet**: [`metadata/samplesheet.csv`](metadata/samplesheet.csv)
+* **Documentation**: [`docs/dataset.md`](docs/dataset.md)
+
+### Samplesheet Format:
+```csv
+sample,fastq_1,fastq_2,condition,replicate
+C1,data/raw/SRR1039508_1.fastq.gz,data/raw/SRR1039508_2.fastq.gz,control,1
+C2,data/raw/SRR1039512_1.fastq.gz,data/raw/SRR1039512_2.fastq.gz,control,2
+C3,data/raw/SRR1039516_1.fastq.gz,data/raw/SRR1039516_2.fastq.gz,control,3
+T1,data/raw/SRR1039509_1.fastq.gz,data/raw/SRR1039509_2.fastq.gz,treatment,1
+T2,data/raw/SRR1039513_1.fastq.gz,data/raw/SRR1039513_2.fastq.gz,treatment,2
+T3,data/raw/SRR1039517_1.fastq.gz,data/raw/SRR1039517_2.fastq.gz,treatment,3
+```
+
+### Validate Samplesheet:
+```bash
+python scripts/python/validate_samplesheet.py metadata/samplesheet.csv
+```
 
 ---
 
