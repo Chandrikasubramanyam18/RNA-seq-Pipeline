@@ -209,9 +209,21 @@ python scripts/python/validate_samplesheet.py metadata/samplesheet.csv
 
 ---
 
-## 8. Pipeline Execution
+## 8. Quality Control Execution (Phase 4)
 
-*(Will be documented as workflow modules are built)*
+Raw read quality profiling is executed via FastQC and aggregated with MultiQC:
+
+```bash
+# 1. Run FastQC across raw FASTQ files
+bash scripts/run_fastqc.sh --input data/raw --output results/fastqc/raw --threads 4
+
+# 2. Extract structured QC metrics into a tabular summary
+python scripts/python/summarize_fastqc.py --input-dir results/fastqc/raw --output results/fastqc/raw/fastqc_summary.tsv
+
+# 3. Aggregate all QC reports into an interactive MultiQC dashboard
+bash scripts/run_multiqc.sh --input results/fastqc/raw --output results/multiqc/raw_fastqc
+```
+For comprehensive interpretation guidelines on Phred scores, GC bias, and duplication metrics, refer to [`docs/qc.md`](docs/qc.md).
 
 ---
 
