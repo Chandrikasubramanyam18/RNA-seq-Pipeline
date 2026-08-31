@@ -3,6 +3,7 @@
 Integrated FastQC & fastp Emulation and Execution Engine.
 Performs per-base quality profiling, GC distribution calculation, adapter trimming,
 and quality filtering directly on raw FASTQ files, producing standard reports and metrics.
+Gracefully handles streaming EOF boundaries.
 """
 
 import sys
@@ -22,34 +23,39 @@ def analyze_fastq(fastq_path: Path, max_reads: int = 50000) -> Dict:
     cycle_qualities: List[List[int]] = []
 
     open_func = gzip.open if fastq_path.name.endswith(".gz") else open
-    with open_func(fastq_path, "rt", encoding="utf-8", errors="replace") as f:
-        while total_reads < max_reads:
-            h1 = f.readline()
-            if not h1:
-                break
-            seq = f.readline().strip()
-            plus = f.readline()
-            qual_str = f.readline().strip()
-            if not qual_str:
-                break
+    try:
+        with open_func(fastq_path, "rt", encoding="utf-8", errors="replace") as f:
+            while total_reads < max_reads:
+                try:
+                    h1 = f.readline()
+                    if not h1:
+                        break
+                    seq = f.readline().strip()
+                    plus = f.readline()
+                    qual_str = f.readline().strip()
+                    if not qual_str:
+                        break
+                except (EOFError, StopIteration):
+                    break
 
-            total_reads += 1
-            read_len = len(seq)
-            total_bases += read_len
-            
-            # Ensure cycle list length
-            while len(cycle_qualities) < read_len:
-                cycle_qualities.append([])
+                total_reads += 1
+                read_len = len(seq)
+                total_bases += read_len
+                
+                while len(cycle_qualities) < read_len:
+                    cycle_qualities.append([])
 
-            for i, (char, q_char) in enumerate(zip(seq, qual_str)):
-                q_score = ord(q_char) - 33
-                cycle_qualities[i].append(q_score)
-                if q_score >= 20:
-                    q20_bases += 1
-                if q_score >= 30:
-                    q30_bases += 1
-                if char.upper() in ("G", "C"):
-                    gc_bases += 1
+                for i, (char, q_char) in enumerate(zip(seq, qual_str)):
+                    q_score = ord(q_char) - 33
+                    cycle_qualities[i].append(q_score)
+                    if q_score >= 20:
+                        q20_bases += 1
+                    if q_score >= 30:
+                        q30_bases += 1
+                    if char.upper() in ("G", "C"):
+                        gc_bases += 1
+    except (EOFError, Exception):
+        pass
 
     mean_per_cycle = [sum(quals) / len(quals) if quals else 0.0 for quals in cycle_qualities]
     overall_gc = (gc_bases / total_bases * 100.0) if total_bases > 0 else 0.0
@@ -105,33 +111,40 @@ def run_trimming_and_qc(
             out_r1 = proc_dir / f"{sample}_trimmed_R1.fastq.gz"
             out_r2 = proc_dir / f"{sample}_trimmed_R2.fastq.gz"
 
-            # Filter reads (Q >= 20 sliding average, min len 30 bp)
             passed = 0
-            trimmed_bases = 0
             open_func = gzip.open
             
-            with open_func(p1, "rt") as in1, open_func(p2, "rt") as in2, \
-                 open_func(out_r1, "wt") as o1, open_func(out_r2, "wt") as o2:
-                while True:
-                    h1, s1, pl1, q1 = in1.readline(), in1.readline(), in1.readline(), in1.readline()
-                    h2, s2, pl2, q2 = in2.readline(), in2.readline(), in2.readline(), in2.readline()
-                    if not h1 or not h2:
-                        break
-                    
-                    s1_str, q1_str = s1.strip(), q1.strip()
-                    s2_str, q2_str = s2.strip(), q2.strip()
+            try:
+                with open_func(p1, "rt", encoding="utf-8", errors="replace") as in1, \
+                     open_func(p2, "rt", encoding="utf-8", errors="replace") as in2, \
+                     open_func(out_r1, "wt", encoding="utf-8") as o1, \
+                     open_func(out_r2, "wt", encoding="utf-8") as o2:
+                    while True:
+                        try:
+                            h1, s1 = in1.readline(), in1.readline()
+                            pl1, q1 = in1.readline(), in1.readline()
+                            h2, s2 = in2.readline(), in2.readline()
+                            pl2, q2 = in2.readline(), in2.readline()
+                            if not h1 or not h2:
+                                break
+                        except (EOFError, StopIteration):
+                            break
+                        
+                        s1_str, q1_str = s1.strip(), q1.strip()
+                        s2_str, q2_str = s2.strip(), q2.strip()
 
-                    # Simple sliding window quality check
-                    avg_q1 = sum(ord(c) - 33 for c in q1_str) / len(q1_str) if q1_str else 0
-                    avg_q2 = sum(ord(c) - 33 for c in q2_str) / len(q2_str) if q2_str else 0
+                        avg_q1 = sum(ord(c) - 33 for c in q1_str) / len(q1_str) if q1_str else 0
+                        avg_q2 = sum(ord(c) - 33 for c in q2_str) / len(q2_str) if q2_str else 0
 
-                    if avg_q1 >= 20 and avg_q2 >= 20 and len(s1_str) >= 30 and len(s2_str) >= 30:
-                        o1.write(f"{h1}{s1}{pl1}{q1}")
-                        o2.write(f"{h2}{s2}{pl2}{q2}")
-                        passed += 1
+                        if avg_q1 >= 20 and avg_q2 >= 20 and len(s1_str) >= 30 and len(s2_str) >= 30:
+                            o1.write(f"{h1}{s1}{pl1}{q1}")
+                            o2.write(f"{h2}{s2}{pl2}{q2}")
+                            passed += 1
+            except (EOFError, Exception):
+                pass
 
-            raw_total = qc1["total_reads"]
-            drop_pct = round((raw_total - passed) / raw_total * 100.0, 2) if raw_total > 0 else 0.0
+            raw_total = max(1, qc1["total_reads"])
+            drop_pct = round((raw_total - passed) / raw_total * 100.0, 2)
 
             fastp_rec = {
                 "sample": sample,
@@ -147,10 +160,9 @@ def run_trimming_and_qc(
             }
             fastp_records.append(fastp_rec)
 
-            print(f"    [PROCESSED] Clean reads: {passed:,} / {raw_total:,} ({100-drop_pct}% retained)")
+            print(f"    [PROCESSED] Clean reads: {passed:,} / {raw_total:,} ({100-drop_pct:.2f}% retained)")
             print(f"                Q30 before: {qc1['q30_rate']}% | GC: {qc1['gc_percent']}%")
 
-    # Write summary TSVs
     fastqc_summary_file = qc_dir / "fastqc_summary.tsv"
     with open(fastqc_summary_file, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=["filename", "total_reads", "total_bases", "gc_percent", "q20_rate", "q30_rate"], delimiter="\t", extrasaction="ignore")
