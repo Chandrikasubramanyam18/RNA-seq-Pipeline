@@ -203,9 +203,37 @@ python scripts/python/validate_samplesheet.py metadata/samplesheet.csv
 
 ---
 
-## 7. Reference Genome Management
+## 7. Reference Genome Management (Phase 6)
 
-*(Will be documented in detail in Phase 6)*
+Reference files use the human **GRCh38.p14** primary assembly and **GENCODE Release 44** (Ensembl 110 compatible) gene annotations with UCSC chromosome naming (`chr1, chr2, ...`).
+
+* **Reference Manifest**: [`metadata/reference_manifest.yaml`](metadata/reference_manifest.yaml)
+* **Reference Guide**: [`docs/reference.md`](docs/reference.md)
+* **Splice Junction Overhang**: $\text{sjdbOverhang} = \text{ReadLength} - 1 = 63 - 1 = 62$
+
+### Validate Reference Compatibility:
+```bash
+python scripts/python/validate_reference.py \
+    --fasta data/reference/genome.fa \
+    --gtf data/reference/genes.gtf
+```
+
+### Build STAR & Salmon Indices:
+```bash
+# STAR Genome Index
+bash scripts/build_star_index.sh \
+    --fasta data/reference/genome.fa \
+    --gtf data/reference/genes.gtf \
+    --outdir data/reference/star_index \
+    --threads 8 --read-len 63
+
+# Salmon Transcriptome Index (Decoy-aware)
+bash scripts/build_salmon_index.sh \
+    --transcripts data/reference/transcripts.fa \
+    --genome data/reference/genome.fa \
+    --outdir data/reference/salmon_index \
+    --threads 8
+```
 
 ---
 

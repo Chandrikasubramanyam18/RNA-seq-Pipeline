@@ -1,0 +1,38 @@
+organism: "Homo sapiens"
+taxonomy_id: 9606
+genome_assembly: "GRCh38.p14"
+release: "GENCODE Release 44 (Ensembl 110)"
+source: "GENCODE / Ensembl"
+download_date: "2026-08-31"
+
+files:
+  genome_fasta:
+    description: "GRCh38 primary assembly sequence (chromosomes 1-22, X, Y, M)"
+    filename: "GRCh38.primary_assembly.genome.fa.gz"
+    url: "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/GRCh38.primary_assembly.genome.fa.gz"
+    uncompressed_filename: "genome.fa"
+    chromosome_naming: "UCSC style (chr1, chr2, ..., chrX, chrM)"
+    md5: "01fca3a2a6111a84f33100be0ef42cae"
+
+  annotation_gtf:
+    description: "Comprehensive gene annotation PRI (primary assembly)"
+    filename: "gencode.v44.primary_assembly.annotation.gtf.gz"
+    url: "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.primary_assembly.annotation.gtf.gz"
+    uncompressed_filename: "genes.gtf"
+    chromosome_naming: "UCSC style (chr1, chr2, ..., chrX, chrM)"
+    md5: "40dcf92224d081bebe86f2b489be4279"
+
+  transcriptome_fasta:
+    description: "All protein-coding and non-coding transcripts"
+    filename: "gencode.v44.transcripts.fa.gz"
+    url: "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.transcripts.fa.gz"
+    uncompressed_filename: "transcripts.fa"
+    md5: "f374775d1df3cf305e83ec551c6c9a3d"
+
+star_parameters:
+  sjdbOverhang: 62 # ReadLength - 1 (63 - 1 = 62)
+  genomeSAindexNbases: 14 # Standard for human (~3.1 Gbp)
+
+salmon_parameters:
+  kmer_length: 31
+  type: "quasi"
