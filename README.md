@@ -1,47 +1,45 @@
-# Production-Grade Bulk RNA-seq Analysis Pipeline
+# Production-Grade Bulk RNA-seq Analysis Platform
 
-[![Nextflow](https://img.shields.io/badge/Nextflow-%E2%89%A523.04.0-brightgreen.svg)](https://www.nextflow.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![R](https://img.shields.io/badge/R-%E2%89%A54.3.0-blue.svg)](https://www.r-project.org/)
-[![Python](https://img.shields.io/badge/Python-%E2%89%A53.10-blue.svg)](https://www.python.org/)
-[![Docker](https://img.shields.io/badge/Container-Docker%20%7C%20Singularity-blue.svg)](https://www.docker.com/)
+[![Python](https://img.shields.io/badge/Python-3.14-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688.svg)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/UI-React%20%2B%20TypeScript-61DAFB.svg)](https://react.dev/)
 
-An end-to-end, reproducible, modular, and production-ready bulk RNA-seq data processing, differential expression, and pathway enrichment analysis pipeline built for local workstations, HPC clusters (Slurm), and cloud environments.
+A learning-focused, end-to-end bulk RNA-seq analysis platform built around the **GSE52778** dexamethasone airway smooth muscle (ASM) study. It combines a 35-chapter educational guide (`docs/`), a read-only interactive React UI (`ui/`), and a FastAPI + SQLite backend (`backend/`) that serves real DESeq2, pathway, FastQC, and fastp analysis artifacts.
+
+> **Platform status**: The interactive UI + API platform (Phases 2 & 3) is **complete and functional**. The full locally-executed Nextflow pipeline (alignment, quantification, etc.) is **planned** — see [Planned](#planned).
 
 ---
 
 ## Table of Contents
 1. [Project Overview & Biological Context](#1-project-overview--biological-context)
-2. [Workflow Architecture](#2-workflow-architecture)
+2. [Platform Architecture](#2-platform-architecture)
 3. [Repository Structure](#3-repository-structure)
 4. [Requirements & Prerequisites](#4-requirements--prerequisites)
 5. [Installation & Environment Setup](#5-installation--environment-setup)
 6. [Dataset & Sample Metadata](#6-dataset--sample-metadata)
 7. [Reference Genome Management](#7-reference-genome-management)
-8. [Pipeline Execution](#8-pipeline-execution)
-9. [Configuration & Execution Profiles](#9-configuration--execution-profiles)
+8. [Analysis & QC](#8-analysis--qc)
+9. [Interactive UI & API](#9-interactive-ui--api)
 10. [Output Directory Structure](#10-output-directory-structure)
-11. [Downstream Analysis & Results](#11-downstream-analysis--results)
-12. [Reproducibility & Versioning](#12-reproducibility--versioning)
-13. [Testing & Quality Assurance](#13-testing--quality-assurance)
-14. [HPC & Cloud Deployment](#14-hpc--cloud-deployment)
-15. [Troubleshooting & FAQ](#15-troubleshooting--faq)
-16. [Citation & References](#16-citation--references)
-17. [License](#17-license)
+11. [Reproducibility & Versioning](#11-reproducibility--versioning)
+12. [Testing & Quality Assurance](#12-testing--quality-assurance)
+13. [Troubleshooting & FAQ](#13-troubleshooting--faq)
+14. [Citation & References](#14-citation--references)
+15. [License](#15-license)
 
 ---
 
 ## 1. Project Overview & Biological Context
 
 ### Biological Objective
-The primary biological objective of this pipeline is to answer:
+The primary biological objective of this platform is to answer:
 > **Which genes are significantly differentially expressed between a treatment group and a control group, and what functional biological pathways, Gene Ontology (GO) terms, and gene sets are significantly dysregulated?**
 
-The pipeline is designed around a multi-replicate experimental design (e.g., Control `C1, C2, C3` vs Treatment `T1, T2, T3`), ensuring rigorous statistical control for biological variability.
+The analysis is built around a multi-replicate experimental design (Control `C1, C2, C3` vs Treatment `T1, T2, T3`), ensuring rigorous statistical control for biological variability.
 
----
-
-## 2. Workflow Architecture
+### Target Pipeline Workflow
+The following is the target end-to-end analytical design (implemented via the UI/API; the full Nextflow execution path is planned):
 
 ```
 Raw FASTQ Reads (Paired-End / Single-End)
@@ -78,114 +76,153 @@ DESeq2 (Negative binomial modeling, size-factor normalization, Wald test)
 
 ---
 
+## 2. Platform Architecture
+
+The platform is split into three working components:
+
+* **`docs/`** — A 35-chapter educational guide that walks through the entire RNA-seq analysis (biology, data, QC, alignment, quantification, statistics, visualization, pathways, and platform/infrastructure concepts).
+* **`ui/`** — A read-only React + TypeScript dashboard that visualizes results. It probes the backend API first (`/health`) and falls back to bundled mock data if the API is unreachable.
+* **`backend/`** — A FastAPI + SQLite application that serves real analysis artifacts (DESeq2 DE tables, pathway enrichments, FastQC/fastp summaries) as structured JSON via REST endpoints.
+
+See [`backend/README.md`](backend/README.md) for API details and run steps.
+
+---
+
 ## 3. Repository Structure
+
+### Current
 
 ```text
 rnaseq-pipeline/
-├── README.md                          # Comprehensive project documentation
+├── README.md                          # This documentation
 ├── LICENSE                            # MIT open-source license
 ├── .gitignore                         # Genomic/runtime git exclusions
 ├── .editorconfig                      # Code style and formatting standards
 │
-├── data/
-│   ├── raw/                           # Untouched original FASTQ reads (symlinks/uncommitted)
-│   ├── processed/                     # Cleaned FASTQ files post-trimming
-│   └── reference/                     # FASTA genome, GTF annotation, STAR/Salmon indices
+├── docs/                              # 35-chapter learning & reference guide
+│   ├── 00_project_overview.md         # Master syllabus / project overview
+│   ├── 01_biology/                    # Biology principles
+│   ├── 02_data/                       # Dataset, FASTQ, metadata
+│   ├── 03_qc/                         # FastQC, fastp, MultiQC
+│   ├── 04_alignment/                  # STAR, reference genome
+│   ├── 05_quantification/             # Salmon, featureCounts
+│   ├── 06_statistics/                 # DESeq2, hypothesis testing
+│   ├── 07_visualization/              # PCA, volcano, MA, heatmaps
+│   ├── 08_pathways/                   # GO, KEGG, GSEA
+│   ├── 09_workflow/                   # Orchestration concepts
+│   ├── 10_reproducibility/            # Conda, Docker, versioning
+│   ├── 11_infrastructure/             # Linux, cloud, storage
+│   └── 12_platform/                   # Platform & API concepts
+│
+├── backend/                           # FastAPI + SQLite API (complete)
+│   ├── app/                           # Application package (models, seeders, routers)
+│   ├── alembic/                       # Database migrations
+│   └── README.md                      # Backend run & API documentation
+│
+├── ui/                                # Read-only React + TypeScript dashboard (complete)
+│   ├── src/                           # Components, API client, hooks, mock data
+│   └── package.json
 │
 ├── metadata/
-│   └── samplesheet.csv                # Sample design table (sample, fastq_1, fastq_2, condition, replicate)
-│
-├── workflow/
-│   ├── main.nf                        # Main Nextflow workflow entry point
-│   ├── nextflow.config                # Base Nextflow configuration & profile declarations
-│   ├── modules/                       # Granular, reusable Nextflow process modules
-│   └── subworkflows/                  # Composed modular subworkflows
+│   ├── samplesheet.csv                # Sample design table (sample, fastq_1, fastq_2, condition, replicate)
+│   ├── dataset_manifest.yaml          # Dataset provenance & download sources
+│   └── reference_manifest.yaml        # Reference genome provenance & checksums
 │
 ├── scripts/
-│   ├── python/                        # Helper scripts (metadata validation, QC parsers)
-│   └── R/                             # Statistical scripts (DESeq2, EDA, pathway enrichment)
+│   └── python/                        # Helper/validation scripts
+│       ├── check_environment.py       # Environment health check
+│       ├── download_dataset.py        # Dataset download/staging helpers
+│       ├── validate_samplesheet.py    # Samplesheet validator
+│       ├── validate_reference.py      # FASTA/GTF compatibility validator
+│       ├── run_qc_and_trim.py         # FastQC + fastp runner
+│       ├── summarize_fastqc.py        # FastQC summary -> TSV
+│       ├── summarize_fastp.py         # fastp summary -> TSV
+│       ├── run_differential_expression.py  # DESeq2 DRIVER (see README)
+│       ├── run_pathway_analysis.py    # clusterProfiler DRIVER (see README)
+│       └── build_test_reference.py    # Miniature test-reference builder
 │
 ├── envs/
-│   └── rnaseq.yml                     # Conda/Mamba environment specification
+│   └── rnaseq.yml                     # Conda/Mamba environment specification (Linux tools)
 │
-├── containers/                        # Dockerfile / Singularity definition files
+├── data/
+│   ├── raw/                           # Untouched original FASTQ reads (git-ignored)
+│   ├── processed/                     # Cleaned FASTQ files post-trimming (git-ignored)
+│   └── reference/                     # FASTA genome, GTF annotation, indices (git-ignored)
 │
 ├── results/                           # Pipeline outputs (organized by analytical step)
-│   ├── fastqc/                        # FastQC HTML/zip outputs (raw & clean)
-│   ├── fastp/                         # Trimming HTML/JSON logs & summary metrics
-│   ├── alignment/                     # Coordinate-sorted BAMs, BAI indexes, STAR logs
-│   ├── salmon/                        # Salmon quant.sf transcript quantification directories
-│   ├── rseqc/                         # RSeQC strandness, coverage, junction reports
-│   ├── multiqc/                       # Consolidated MultiQC HTML report & data tables
-│   ├── counts/                        # Raw count matrices & featureCounts summaries
-│   ├── differential_expression/       # Full DESeq2 tables, filtered DEGs (padj < 0.05)
-│   ├── visualization/                 # Publication-ready plots (PCA, Volcano, Heatmap, MA)
-│   └── pathway_analysis/              # GO terms, KEGG enrichment, and GSEA output tables
-│
 ├── reports/
-│   ├── figures/                       # High-resolution vector & raster figures (PDF/PNG)
-│   └── final_report/                  # Consolidated final biological analysis report
+│   ├── preprocessing_review.md        # Preprocessing review notes
+│   └── qc_review.md                   # QC review notes
 │
-├── docs/
-│   ├── workflow.md                    # In-depth pipeline workflow explanation
-│   ├── methods.md                     # Formal scientific methods and parameter documentation
-│   ├── interpretation.md              # Biological interpretation of results and limitations
-│   └── troubleshooting.md             # Common errors, debugging steps, and solutions
-│
-├── tests/
-│   ├── unit/                          # Unit tests for Python scripts (pytest)
-│   └── integration/                   # Pipeline integration & smoke tests
-│
-└── .github/
-    └── workflows/                     # GitHub Actions CI/CD workflows
+└── tests/
+    └── unit/                          # Unit tests for Python scripts (pytest)
+```
+
+### Planned
+
+The following components are **not yet implemented** and should not be referenced as executable today:
+
+```text
+workflow/
+├── main.nf                        # Main Nextflow workflow entry point      → planned
+├── nextflow.config                # Base Nextflow configuration & profiles  → planned
+├── modules/                       # Reusable Nextflow process modules        → planned
+└── subworkflows/                  # Composed modular subworkflows            → planned
+
+containers/                        # Dockerfile / Singularity definition files → planned
+scripts/R/                         # Statistical scripts (DESeq2, EDA, pathways) → planned
+.github/workflows/                 # GitHub Actions CI/CD                      → planned
+tests/integration/                 # Pipeline integration & smoke tests       → planned
 ```
 
 ---
 
 ## 4. Requirements & Prerequisites
 
-* **Operating System**: Linux (Ubuntu 20.04+ / RHEL 8+) or macOS (with Docker / WSL2 on Windows)
-* **Shell**: Bash / Zsh
-* **Language Runtimes**:
-  * Python >= 3.10
-  * R >= 4.3.0
-  * Java >= 11 (required for Nextflow)
-* **Workflow Engine**: Nextflow >= 23.04.0
-* **Container Runtimes** (recommended): Docker or Singularity/Apptainer
+The *currently running* components require only:
+
+* **Python 3.14+** — for `scripts/python/` and the `backend/` API.
+* **Node.js / npm** — for the `ui/` dashboard.
+* **bash / POSIX shell** — only if running the Linux-tooling steps locally (preferred in WSL2 on Windows).
+
+For the **planned** locally-executed Nextflow pipeline, you will additionally need: a POSIX environment (Linux / WSL2 / Docker), Nextflow >= 23.04.0, Java >= 11, R >= 4.3, and container runtimes (Docker / Singularity). See [`docs/10_reproducibility/`](docs/10_reproducibility/) and [`docs/11_infrastructure/linux.md`](docs/11_infrastructure/linux.md).
 
 ---
 
 ## 5. Installation & Environment Setup
 
-The computational environment is managed through Conda/Mamba using pinned dependencies defined in [`envs/rnaseq.yml`](envs/rnaseq.yml).
-
-### Quick Setup:
+### Python backend & scripts
 ```bash
-# 1. Create environment
-mamba env create -f envs/rnaseq.yml
-
-# 2. Activate environment
-conda activate rnaseq-pipeline
-
-# 3. Verify environment health
-bash scripts/check_environment.sh
-python scripts/python/check_environment.py
+pip install -r backend/requirements.txt    # (if present) or the pinned deps in backend/README.md
+python -c "import backend.app.main"         # sanity check
 ```
-For detailed Windows WSL2 instructions, refer to [`docs/environment_setup.md`](docs/environment_setup.md).
+
+### UI dashboard
+```bash
+cd ui
+npm install
+npm run typecheck
+npm run dev          # start the Vite dev server
+```
+
+For detailed Windows/WSL2 and tooling guidance, see:
+* [`docs/00_project_overview.md`](docs/00_project_overview.md)
+* [`docs/11_infrastructure/linux.md`](docs/11_infrastructure/linux.md)
+* [`docs/10_reproducibility/conda.md`](docs/10_reproducibility/conda.md)
 
 ---
 
 ## 6. Dataset & Sample Metadata
 
-This pipeline uses the benchmark **GSE52778** human airway smooth muscle (ASM) RNA-seq study (Himes et al., *PLoS ONE* 2014) investigating glucocorticoid response (Dexamethasone treatment vs untreated control across 3 biological donor cell lines).
+This platform uses the benchmark **GSE52778** human airway smooth muscle (ASM) RNA-seq study (Himes et al., *PLoS ONE* 2014) investigating glucocorticoid response (Dexamethasone treatment vs untreated control across 3 biological donor cell lines).
 
 * **Organism**: *Homo sapiens* (GRCh38)
-* **Design**: 3 Control vs 3 Treatment replicates (Paired-end, $2 \times 63$ bp)
+* **Design**: 3 Control vs 3 Treatment replicates (Paired-end, 2 x 63 bp)
 * **Metadata Manifest**: [`metadata/dataset_manifest.yaml`](metadata/dataset_manifest.yaml)
 * **Samplesheet**: [`metadata/samplesheet.csv`](metadata/samplesheet.csv)
-* **Documentation**: [`docs/dataset.md`](docs/dataset.md)
+* **Documentation**: [`docs/00_project_overview.md`](docs/00_project_overview.md) and [`docs/02_data/`](docs/02_data/)
 
-### Samplesheet Format:
+### Samplesheet Format
 ```csv
 sample,fastq_1,fastq_2,condition,replicate
 C1,data/raw/SRR1039508_1.fastq.gz,data/raw/SRR1039508_2.fastq.gz,control,1
@@ -196,131 +233,93 @@ T2,data/raw/SRR1039513_1.fastq.gz,data/raw/SRR1039513_2.fastq.gz,treatment,2
 T3,data/raw/SRR1039517_1.fastq.gz,data/raw/SRR1039517_2.fastq.gz,treatment,3
 ```
 
-### Validate Samplesheet:
+### Validate Samplesheet
 ```bash
 python scripts/python/validate_samplesheet.py metadata/samplesheet.csv
 ```
 
 ---
 
-## 7. Reference Genome Management (Phase 6)
+## 7. Reference Genome Management
 
 Reference files use the human **GRCh38.p14** primary assembly and **GENCODE Release 44** (Ensembl 110 compatible) gene annotations with UCSC chromosome naming (`chr1, chr2, ...`).
 
 * **Reference Manifest**: [`metadata/reference_manifest.yaml`](metadata/reference_manifest.yaml)
-* **Reference Guide**: [`docs/reference.md`](docs/reference.md)
-* **Splice Junction Overhang**: $\text{sjdbOverhang} = \text{ReadLength} - 1 = 63 - 1 = 62$
+* **Reference Guide**: [`docs/04_alignment/reference_genome.md`](docs/04_alignment/reference_genome.md)
+* **Splice Junction Overhang**: `sjdbOverhang = ReadLength - 1 = 63 - 1 = 62`
 
-### Validate Reference Compatibility:
+### Validate Reference Compatibility
 ```bash
 python scripts/python/validate_reference.py \
     --fasta data/reference/genome.fa \
     --gtf data/reference/genes.gtf
 ```
 
-### Build STAR & Salmon Indices:
-```bash
-# STAR Genome Index
-bash scripts/build_star_index.sh \
-    --fasta data/reference/genome.fa \
-    --gtf data/reference/genes.gtf \
-    --outdir data/reference/star_index \
-    --threads 8 --read-len 63
-
-# Salmon Transcriptome Index (Decoy-aware)
-bash scripts/build_salmon_index.sh \
-    --transcripts data/reference/transcripts.fa \
-    --genome data/reference/genome.fa \
-    --outdir data/reference/salmon_index \
-    --threads 8
-```
-
 ---
 
-## 8. Pipeline Execution (Phases 4 & 5)
+## 8. Analysis & QC
 
-### Quality Control (Phase 4):
+### Quality Control
 ```bash
-# 1. Run FastQC across raw FASTQ files
-bash scripts/run_fastqc.sh --input data/raw --output results/fastqc/raw --threads 4
-
-# 2. Extract structured QC metrics into a tabular summary
+# Extract structured QC metrics into a tabular summary
 python scripts/python/summarize_fastqc.py --input-dir results/fastqc/raw --output results/fastqc/raw/fastqc_summary.tsv
-
-# 3. Aggregate all QC reports into an interactive MultiQC dashboard
-bash scripts/run_multiqc.sh --input results/fastqc/raw --output results/multiqc/raw_fastqc
 ```
-For interpretation guidelines on Phred scores, GC bias, and duplication metrics, see [`docs/qc.md`](docs/qc.md).
+For interpretation guidelines on Phred scores, GC bias, and duplication metrics, see [`docs/03_qc/fastqc.md`](docs/03_qc/fastqc.md).
 
-### Read Preprocessing & Trimming (Phase 5):
+### Read Preprocessing & Trimming
 ```bash
-# 1. Run fastp adapter trimming and quality filtering (Q >= 20, min length >= 30 bp)
-bash scripts/run_fastp.sh --samplesheet metadata/samplesheet.csv --out-fastq data/processed --out-report results/fastp --threads 4
-
-# 2. Extract fastp before/after quality metrics into a tabular summary
+# Run fastp adapter trimming / quality filtering and aggregate metrics
+python scripts/python/run_qc_and_trim.py
 python scripts/python/summarize_fastp.py --input-dir results/fastp --output results/fastp/fastp_summary.tsv
-
-# 3. Run post-trimming FastQC on cleaned reads
-bash scripts/run_fastqc.sh --input data/processed --output results/fastqc/clean --threads 4
 ```
-For comprehensive preprocessing principles and poly-G clipping documentation, see [`docs/preprocessing.md`](docs/preprocessing.md).
+For comprehensive preprocessing principles and poly-G clipping documentation, see [`docs/03_qc/fastp.md`](docs/03_qc/fastp.md).
 
 ---
 
-## 9. Configuration & Execution Profiles
+## 9. Interactive UI & API
 
-Execution profiles supported:
-* `-profile local`: Standard local workstation execution using Conda environments.
-* `-profile docker`: Local execution with fully isolated Docker containers.
-* `-profile singularity`: HPC-compliant execution using Singularity/Apptainer images.
-* `-profile slurm`: Automated job submission to Slurm workload managers.
-* `-profile awsbatch`: Cloud-native scale-out on AWS Batch.
+The results are browsable through the read-only React dashboard backed by the FastAPI service, so no local bioinformatics execution is required to explore the curated analysis.
+
+* **Backend**: see [`backend/README.md`](backend/README.md) for setup, seeding, and the full endpoint list.
+* **Frontend**: `ui/` — starts with `npm run dev` and connects to the API at `http://localhost:8000` (falls back to mock data if unreachable).
+* **Provenance note**: The backend correctly marks the project `isMock: true` until the full alignment + quantification pipeline has been run for the first time; real DESeq2, pathway, FastQC, and fastp artifacts are served as source-derived.
 
 ---
 
 ## 10. Output Directory Structure
 
-*(See Repository Structure above)*
+*(See [Repository Structure](#3-repository-structure) above.)*
 
 ---
 
-## 11. Downstream Analysis & Results
-
-*(Will be populated during DESeq2 and Pathway enrichment phases)*
-
----
-
-## 12. Reproducibility & Versioning
+## 11. Reproducibility & Versioning
 
 To ensure strict scientific reproducibility:
-1. **Pinned Dependencies**: All Conda/Docker software dependencies specify exact version numbers.
-2. **Fixed Random Seeds**: All stochastic algorithms (e.g., DESeq2 PCA, GSEA permutations) use explicitly documented random seeds (`set.seed(42)`).
-3. **Reference Provenance**: Genome build, Ensembl/Gencode release, and source checksums are tracked.
-4. **Git Versioning**: Workflow revisions are tagged with semantic release versions.
+1. **Pinned Dependencies**: Conda/Docker dependency versions are pinned in `envs/rnaseq.yml`.
+2. **Fixed Random Seeds**: Stochastic algorithms (e.g., DESeq2 PCA, GSEA permutations) use documented random seeds (`set.seed(42)`).
+3. **Reference Provenance**: Genome build, Ensembl/GENCODE release, and source checksums are tracked in `metadata/reference_manifest.yaml`.
+4. **Git Versioning**: Revisions are tagged with semantic release versions.
 
 ---
 
-## 13. Testing & Quality Assurance
+## 12. Testing & Quality Assurance
 
-* Python script testing via `pytest`.
-* Metadata validation testing for missing files, invalid headers, and mismatched read pairs.
-* Modular smoke tests on a miniature reference subset.
-
----
-
-## 14. HPC & Cloud Deployment
-
-*(Detailed configuration files in `workflow/nextflow.config`)*
+* Python unit tests via `pytest` in [`tests/unit/`](tests/unit/).
+* Metadata/samplesheet validation for missing files, invalid headers, and mismatched read pairs.
+* `ui/` is verified with `npm run typecheck` and `npm run build`.
 
 ---
 
-## 15. Troubleshooting & FAQ
+## 13. Troubleshooting & FAQ
 
-Refer to [`docs/troubleshooting.md`](docs/troubleshooting.md) for diagnostics on common RNA-seq pipeline issues (e.g., low mapping rates, strandness ambiguity, memory limits in STAR).
+For diagnostics on common RNA-seq pipeline issues (low mapping rates, strandness ambiguity, STAR memory limits), see the platform and infrastructure chapters:
+* [`docs/11_infrastructure/linux.md`](docs/11_infrastructure/linux.md)
+* [`docs/00_project_overview.md`](docs/00_project_overview.md)
+* [`backend/README.md`](backend/README.md)
 
 ---
 
-## 16. Citation & References
+## 14. Citation & References
 
 * **FastQC**: Andrews, S. (2010). FastQC: A Quality Control Tool for High Throughput Sequence Data.
 * **fastp**: Chen, S., et al. (2018). *Bioinformatics*, 34(17), i884–i890.
@@ -335,6 +334,6 @@ Refer to [`docs/troubleshooting.md`](docs/troubleshooting.md) for diagnostics on
 
 ---
 
-## 17. License
+## 15. License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
