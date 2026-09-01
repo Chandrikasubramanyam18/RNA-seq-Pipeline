@@ -129,3 +129,11 @@ Thumbs.db
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/extensions.json
+
+# --- Backend (FastAPI / SQLite) ---
+backend/data/*.db
+backend/data/*.db-journal
+backend/.env
+backend/*.log
+backend/*.err.log
+
