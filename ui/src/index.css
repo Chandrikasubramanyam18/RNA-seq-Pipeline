@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+/* =============================================================
+   RNA-seq Analysis Platform — Dark Genomics Console theme
+   Tailwind CSS v4 (CSS-first configuration via @theme)
+   ============================================================= */
+
+@theme {
+  /* Backgrounds */
+  --color-bg: #070d14;
+  --color-surface: #0d1622;
+  --color-surface-2: #132032;
+  --color-border: #1e3044;
+
+  /* Accents (teal/cyan "instrument readout") */
+  --color-accent: #2dd4bf;
+  --color-accent-dim: #14b8a6;
+  --color-cyan-glow: #22d3ee;
+
+  /* Semantic status colors */
+  --color-ok: #34d399;
+  --color-warn: #fbbf24;
+  --color-fail: #f87171;
+  --color-muted: #64748b;
+
+  /* Primary text + fonts */
+  --color-fg: #e2e8f0;
+  --color-fg-dim: #94a3b8;
+  --font-mono: "SFMono-Regular", "JetBrains Mono", "Cascadia Code",
+    Consolas, "Liberation Mono", monospace;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Numeric readouts always monospace (lab-instrument feel) */
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Thin dark scrollbars to match the console aesthetic */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
