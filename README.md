@@ -7,7 +7,7 @@
 
 A learning-focused, end-to-end bulk RNA-seq analysis platform built around the **GSE52778** dexamethasone airway smooth muscle (ASM) study. It combines a 35-chapter educational guide (`docs/`), a read-only interactive React UI (`ui/`), and a FastAPI + SQLite backend (`backend/`) that serves real DESeq2, pathway, FastQC, and fastp analysis artifacts.
 
-> **Platform status**: The interactive UI + API platform (Phases 2 & 3) is **complete and functional**. The full locally-executed Nextflow pipeline (alignment, quantification, etc.) is **planned** — see [Planned](#planned).
+> **Platform status**: The interactive UI + API platform (Phases 2 & 3) is **complete and functional**. The analytical pipeline has been executed **end-to-end with real tools at tutorial scale** (50,000 read pairs/sample against a real-loci 3-gene mini-reference: STAR, SAMtools/RSeQC/MultiQC, featureCounts, DESeq2, visualization, clusterProfiler pathway analysis) — see [8. Analysis & QC](#8-analysis--qc) and the step gate reports in `reports/`. The full **Nextflow-orchestrated** execution path is still **planned** — see [Planned](#planned).
 
 ---
 
@@ -170,9 +170,18 @@ workflow/
 └── subworkflows/                  # Composed modular subworkflows            → planned
 
 containers/                        # Dockerfile / Singularity definition files → planned
-scripts/R/                         # Statistical scripts (DESeq2, EDA, pathways) → planned
 .github/workflows/                 # GitHub Actions CI/CD                      → planned
 tests/integration/                 # Pipeline integration & smoke tests       → planned
+```
+
+The **statistical scripts** listed below (`scripts/R/`) are now implemented and executed against real pipeline outputs (tutorial-scale):
+
+```text
+scripts/R/
+├── run_deseq2.R                   # DESeq2 driver (default fitType demo)     → implemented (Step 7)
+├── run_deseq2_fittype_mean.R      # DESeq2 driver (fitType="mean")           → implemented (Step 7)
+├── run_visualization.R            # PCA / MA / volcano / heatmap data        → implemented (Step 8)
+└── run_pathway_analysis.R         # clusterProfiler GO/KEGG ORA              → implemented (Step 9)
 ```
 
 ---
@@ -282,7 +291,7 @@ The results are browsable through the read-only React dashboard backed by the Fa
 
 * **Backend**: see [`backend/README.md`](backend/README.md) for setup, seeding, and the full endpoint list.
 * **Frontend**: `ui/` — starts with `npm run dev` and connects to the API at `http://localhost:8000` (falls back to mock data if unreachable).
-* **Provenance note**: The backend correctly marks the project `isMock: true` until the full alignment + quantification pipeline has been run for the first time; real DESeq2, pathway, FastQC, and fastp artifacts are served as source-derived.
+* **Provenance note**: The backend correctly marks the project `isMock: true` until a **publication/full biological analysis** has been completed. Real tutorial-scale artifacts (DESeq2, pathway, FastQC/fastp summaries, alignment QC, count matrix, visualization) are served as source-derived; `isMock` stays true because the current execution is tutorial-scale (50,000 read pairs/sample, 3-gene mini-reference) and not genome-wide biological inference.
 
 ---
 
