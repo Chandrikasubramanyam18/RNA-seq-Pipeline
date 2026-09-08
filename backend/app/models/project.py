@@ -45,6 +45,11 @@ class ProjectModel(Base):
     name: Mapped[str] = mapped_column(String)
     design_description: Mapped[str] = mapped_column(Text)
     is_mock: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Semantic split (locked): execution_real means tool-derived artifacts exist
+    # on disk and are served as source_derived; is_mock stays true because the
+    # execution is tutorial-scale, not publication/full biological analysis.
+    execution_real: Mapped[bool] = mapped_column(Boolean, default=True)
+    analysis_scope: Mapped[str] = mapped_column(String, default="tutorial_mini_reference")
 
     genome_assembly: Mapped[str] = mapped_column(String)
     reference_release: Mapped[str] = mapped_column(String)

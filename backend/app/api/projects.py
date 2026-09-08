@@ -34,6 +34,8 @@ def _to_schema(p: ProjectModel) -> Project:
             "name": p.name,
             "designDescription": p.design_description,
             "isMock": p.is_mock,
+            "executionReal": p.execution_real,
+            "analysisScope": p.analysis_scope,
             "reference": {
                 "genomeAssembly": p.genome_assembly,
                 "release": p.reference_release,

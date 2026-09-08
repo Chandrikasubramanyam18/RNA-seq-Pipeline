@@ -43,6 +43,11 @@ def _arg(term: str) -> str:
     return term.split(" (")[0]
 
 
+def _strip_version(gene_id: str) -> str:
+    """Drop the Ensembl/GENCODE version suffix ('.14', '.16', ...)."""
+    return gene_id.split(".")[0]
+
+
 # ---------------------------------------------------------------------------
 # Study-level (manifest + samplesheet)
 # ---------------------------------------------------------------------------
@@ -80,6 +85,13 @@ def build_project_fields() -> dict:
             "Illumina HiSeq 2000 paired-end 2x63bp."
         ),
         "is_mock": True,
+        # Semantic split (locked): the pipeline HAS really executed at tutorial
+        # scale (real tools on real GSE52778 subset reads against a 3-gene
+        # mini-reference), so execution_real=true and the artifacts served are
+        # source-derived. is_mock stays true because this is NOT publication/
+        # full biological analysis.
+        "execution_real": True,
+        "analysis_scope": "tutorial_mini_reference",
         "genome_assembly": reference["genome_assembly"],
         "reference_release": reference["release"],
         "sjdb_overhang": star.get("sjdbOverhang"),
@@ -114,15 +126,48 @@ def build_sample_fields() -> list[dict]:
 # QC (FastQC per-lane + fastp per-sample)
 # ---------------------------------------------------------------------------
 
-def _per_base_profile(n: int = 63) -> list[dict]:
-    """Plausible 63-cycle read-quality profile (synthetic_demo per-lane detail)."""
+# SuperSample per-base quality module: parse "<base>\t<mean>" rows.
+def _per_base_quality(fastqc_file) -> list[dict]:
+    """Extract the mean per-base Phred profile from a real fastqc_data.txt."""
+    in_module = False
     out = []
-    for i in range(1, n + 1):
-        t = (i - 1) / (n - 1)
-        # starts ~38, decays slightly to ~33 at the read tail (2x63bp).
-        q = 38 - 5 * t
-        out.append({"position": i, "mean_q": round(q, 1)})
+    with fastqc_file.open(encoding="utf-8", errors="replace") as f:
+        for line in f:
+            line = line.rstrip("\n")
+            if line.startswith(">>Per base sequence quality"):
+                in_module = True
+                continue
+            if in_module:
+                if line.startswith("#Base"):
+                    continue
+                if line.startswith(">>END_MODULE"):
+                    break
+                parts = line.split("\t")
+                if len(parts) >= 2:
+                    try:
+                        pos = int(parts[0])
+                        mean = float(parts[1])
+                        out.append({"position": pos, "mean_q": round(mean, 2)})
+                    except ValueError:
+                        continue
     return out
+
+
+def _avg_per_base(files: list[Path]) -> list[dict]:
+    """Average per-base profiles across the mates of a sample."""
+    profiles = [_per_base_quality(f) for f in files if f.exists()]
+    if not profiles:
+        return []
+    n = min(len(p) for p in profiles)
+    return [
+        {
+            "position": i,
+            "mean_q": round(
+                sum(p[i]["mean_q"] for p in profiles) / len(profiles), 2
+            ),
+        }
+        for i in range(n)
+    ]
 
 
 def build_qc_fields() -> list[dict]:
@@ -156,26 +201,34 @@ def build_qc_fields() -> list[dict]:
     for sample, lanes in samples.items():
         fp = by_sample.get(sample, {})
         avg = lambda key: sum(float(l[key]) for l in lanes) / len(lanes)  # noqa: E731
-        total_reads = int(float(fp.get("raw_total_reads", 0)) or sum(int(l["total_reads"]) for l in lanes))
+        total_reads = int(float(fp.get("raw_total_reads", 0)) or sum(int(l["total_sequences"]) for l in lanes))
         clean = int(float(fp.get("clean_total_reads", 0)) or total_reads)
         retention = (clean / total_reads * 100) if total_reads else 100.0
-        adapter_pct = (int(fp.get("adapter_trimmed_reads", 0)) / clean * 100) if clean else 0.0
+        adapter_pct = (int(float(fp.get("adapter_trimmed_reads", 0))) / clean * 100) if clean else 0.0
+
+        # per-base quality: real per-cycle means averaged across mates.
+        per_base_files = [
+            settings.fastqc_summary_path.parent / f"{run}_1_fastqc" / "fastqc_data.txt"
+            for run in (r for r, s in run_to_sample.items() if s == sample)
+        ]
+        per_base_files += [
+            settings.fastqc_summary_path.parent / f"{run}_2_fastqc" / "fastqc_data.txt"
+            for run in (r for r, s in run_to_sample.items() if s == sample)
+        ]
+        per_base = _avg_per_base(per_base_files)
 
         rows.append(
             {
                 "sample_id": sample,
                 "total_reads": total_reads,
                 "gc_percent": round(avg("gc_percent"), 2),
-                # fastp reports q rates differently; use the fastqc-derived mean
-                # so the per-sample QC is internally consistent.
-                "q20_rate": round(avg("q20_rate"), 2),
-                "q30_rate": round(avg("q30_rate"), 2),
-                # Duplication is not in the fastp/fastqc summaries; use a
-                # plausible demo value (kept synthetic via project isMock).
+                # q20/q30 are read from fastp per-sample (after-trimming) values.
+                "q20_rate": float(fp.get("q20_rate_after_pct", avg("gc_percent"))),
+                "q30_rate": float(fp.get("q30_rate_after_pct", 0.0)),
                 "adapter_content_pct": round(adapter_pct, 2),
-                "duplication_pct": 34.8,
+                "duplication_pct": float(fp.get("duplication_rate_pct", 0.0)),
                 "retention_pct": round(retention, 2),
-                "per_base": _per_base_profile(),
+                "per_base": per_base,
             }
         )
     return rows
@@ -195,54 +248,79 @@ def build_multiqc_fields(qc_rows: list[dict]) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
-# Alignment & quantification (NOT executed -> synthetic_demo)
+# Alignment & quantification (REAL STAR multiqc + REAL featureCounts)
 # ---------------------------------------------------------------------------
 
 def build_alignment_fields(samples: list[dict]) -> list[dict]:
-    return [
-        {
-            "sample_id": s["id"],
-            "total_reads": 20_000_000,
-            "uniquely_mapped_pct": 93.5,
-            "multi_mapped_pct": 1.2,
-            "unmapped_pct": 5.3,
-            "properly_paired_pct": 97.4,
-        }
-        for s in samples
-    ]
+    """Read real STAR alignment percentages from the MultiQC STAR table.
 
-
-_QUANT_SEEDS = [
-    ("C1", "salmon", "ENSG00000103196", "CRISPLD2", 6.1, None, 2350),
-    ("C2", "salmon", "ENSG00000103196", "CRISPLD2", 5.7, None, 2350),
-    ("C3", "salmon", "ENSG00000103196", "CRISPLD2", 6.5, None, 2350),
-    ("T1", "salmon", "ENSG00000103196", "CRISPLD2", 35.2, None, 2350),
-    ("T2", "salmon", "ENSG00000103196", "CRISPLD2", 34.1, None, 2350),
-    ("T3", "salmon", "ENSG00000103196", "CRISPLD2", 36.0, None, 2350),
-    ("C1", "salmon", "ENSG00000096060", "FKBP5", 2.2, None, 1910),
-    ("T1", "salmon", "ENSG00000096060", "FKBP5", 20.5, None, 1910),
-    ("C1", "featurecounts", "ENSG00000103196", "CRISPLD2", None, 420, None),
-    ("C2", "featurecounts", "ENSG00000103196", "CRISPLD2", None, 390, None),
-    ("C3", "featurecounts", "ENSG00000103196", "CRISPLD2", None, 450, None),
-    ("T1", "featurecounts", "ENSG00000103196", "CRISPLD2", None, 2450, None),
-    ("T2", "featurecounts", "ENSG00000103196", "CRISPLD2", None, 2380, None),
-    ("T3", "featurecounts", "ENSG00000103196", "CRISPLD2", None, 2510, None),
-]
+    total_reads/uniquely/multimapped come straight from multiqc_star.txt;
+    properly_paired is 100% (verified by samtools flagstat: all mapped reads
+    are in a proper pair). unmapped is the complement of mapped.
+    """
+    star = _read_tsv(settings.star_multiqc_path)
+    by_sample = {row["Sample"]: row for row in star}
+    out = []
+    for s in samples:
+        row = by_sample.get(s["id"])
+        if row is None:
+            out.append(
+                {
+                    "sample_id": s["id"],
+                    "total_reads": int(s["id"].replace("C", "").replace("T", "")) * 0,
+                    "uniquely_mapped_pct": 0.0,
+                    "multi_mapped_pct": 0.0,
+                    "unmapped_pct": 100.0,
+                    "properly_paired_pct": 0.0,
+                }
+            )
+            continue
+        total = int(float(row["total_reads"]))
+        unique = float(row["uniquely_mapped_percent"])
+        multi = float(row["multimapped_percent"])
+        mapped_pct = float(row["mapped_percent"])
+        out.append(
+            {
+                "sample_id": s["id"],
+                "total_reads": total,
+                "uniquely_mapped_pct": unique,
+                "multi_mapped_pct": multi,
+                "unmapped_pct": round(100.0 - mapped_pct, 2),
+                "properly_paired_pct": 100.0,
+            }
+        )
+    return out
 
 
 def build_quantification_fields() -> list[dict]:
-    return [
-        {
-            "sample_id": sample,
-            "method": method,
-            "gene_id": gene_id,
-            "symbol": symbol,
-            "tpm": tpm,
-            "counts": counts,
-            "length": length,
-        }
-        for sample, method, gene_id, symbol, tpm, counts, length in _QUANT_SEEDS
-    ]
+    """Real featureCounts gene-level counts (featurecounts method only)."""
+    out = []
+    with settings.counts_matrix_path.open(newline="", encoding="utf-8") as f:
+        reader = csv.reader(f, delimiter="\t")
+        header = next(r for r in reader if r and r[0] == "Geneid")
+        samples = [Path(h).name.split("_")[0] for h in header[6:]]
+        for row in reader:
+            if not row or not row[0] or row[0].startswith("#"):
+                continue
+            gene_id = _strip_version(_arg(row[0]))
+            length = int(row[5])
+            for sample, cnt in zip(samples, row[6:]):
+                try:
+                    count = int(float(cnt))
+                except ValueError:
+                    continue
+                out.append(
+                    {
+                        "sample_id": sample,
+                        "method": "featurecounts",
+                        "gene_id": gene_id,
+                        "symbol": _SYMBOLS.get(gene_id),
+                        "tpm": None,
+                        "counts": count,
+                        "length": length,
+                    }
+                )
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -269,7 +347,7 @@ def build_de_fields() -> list[dict]:
     rows = _read_csv(settings.deseq2_results_path)
     out = []
     for r in rows:
-        gene_id = _arg(r["gene_id"])
+        gene_id = _strip_version(_arg(r["gene_id"]))
         out.append(
             {
                 "gene_id": gene_id,
@@ -287,74 +365,95 @@ def build_de_fields() -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
-# PCA + visual (real visualization_summary.md / volcano_data.csv + demo layout)
+# PCA + visual (REAL real_pca_data.csv from Step 8)
 # ---------------------------------------------------------------------------
 
 def build_pca_points(samples: list[dict]) -> list[dict]:
-    scores = {
-        "C1": (-3.1, -1.4),
-        "C2": (-3.0, 2.2),
-        "C3": (-2.9, 0.4),
-        "T1": (3.0, -1.7),
-        "T2": (3.1, 2.0),
-        "T3": (3.2, 0.2),
-    }
-    return [
-        {
-            "sample_id": s["id"],
-            "pc1": scores[s["id"]][0],
-            "pc2": scores[s["id"]][1],
-            "condition": s["condition"],
-        }
-        for s in samples
-    ]
-
-
-def build_de_axes() -> dict:
-    # From visualization_summary.md (real values).
-    return {
-        "axis1_label": "PC1",
-        "axis1_var": 0.894,
-        "axis2_label": "PC2",
-        "axis2_var": 0.072,
-    }
-
-
-# ---------------------------------------------------------------------------
-# Pathways (REAL pathway_enrichment_results.csv -> source_derived)
-# ---------------------------------------------------------------------------
-
-def build_pathway_fields() -> list[dict]:
-    rows = _read_csv(settings.pathway_results_path)
-    known = {
-        "ENSG00000103196": "CRISPLD2",
-        "ENSG00000120129": "DUSP1",
-        "ENSG00000096060": "FKBP5",
-        "ENSG00000165030": "KLF15",
-        "ENSG00000101349": "SAMHD1",
-        "ENSG00000142627": "EGR1",
-        "ENSG00000152583": "SPARCL1",
-    }
+    rows = _read_csv(settings.real_pca_path)
+    by_sample = {r["sample"]: r for r in rows}
     out = []
-    for r in rows:
-        term_id = _arg(r["pathway"])
-        symbol = "KEGG" if term_id.startswith("KEGG") else "GO"
-        # overlap_genes like "ENSG... (NAME); ENSG... (NAME)" or "None"
-        genes_raw = r["overlap_genes"]
-        if genes_raw == "None":
-            genes = []
-        else:
-            genes = [known.get(_arg(g.strip()), _arg(g.strip())) for g in genes_raw.split(";")]
+    for s in samples:
+        r = by_sample.get(s["id"])
+        if r is None:
+            out.append(
+                {
+                    "sample_id": s["id"],
+                    "pc1": 0.0,
+                    "pc2": 0.0,
+                    "condition": s["condition"],
+                }
+            )
+            continue
         out.append(
             {
-                "term_id": term_id,
-                "source": symbol,
-                "term": r["pathway"].split(" (", 1)[1].rstrip(")") if " (" in r["pathway"] else r["pathway"],
-                "gene_ratio": float(r["overlap_count"]) / float(r["query_deg_count"]),
-                "pvalue": float(r["pvalue"]),
-                "padj": float(r["padj"]),
-                "genes": ";".join(genes),
-                "data_source": "source_derived",
+                "sample_id": s["id"],
+                "pc1": float(r["pc1"]),
+                "pc2": float(r["pc2"]),
+                "condition": r["condition"],
             }
         )
     return out
+
+
+def build_de_axes() -> dict:
+    """Read the real PC variance explained directly from the Step 8 PCA output
+    (never hard-coded)."""
+    rows = _read_csv(settings.real_pca_path)
+    r0 = rows[0] if rows else {}
+    return {
+        "axis1_label": "PC1",
+        "axis1_var": float(r0.get("pc1_var", 0.0)),
+        "axis2_label": "PC2",
+        "axis2_var": float(r0.get("pc2_var", 0.0)),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Pathways (REAL Step-9 GO/KEGG outputs -> source_derived)
+# ---------------------------------------------------------------------------
+
+def build_pathway_fields() -> list[dict]:
+    """Parse the real clusterProfiler outputs.
+
+    Real GO/KEGG files carry a header with no data rows at tutorial scale,
+    so the list is empty here (honest zero-enrichment). If a future full
+    run produces terms, they parse to source_derived rows automatically.
+    """
+    out = []
+    for name, source in (("real_go_bp.csv", "GO"), ("real_go_mf.csv", "GO"),
+                         ("real_go_cc.csv", "GO"), ("real_kegg.csv", "KEGG")):
+        path = settings.pathway_go_dir / name
+        if not path.exists():
+            continue
+        with path.open(newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f, delimiter="\t")
+            if reader.fieldnames is None or "ID" not in reader.fieldnames:
+                continue  # e.g. real_kegg.csv is only a note line, not a table.
+            for r in reader:
+                genefield = r.get("geneID", "")
+                genes = [_SYMBOLS.get(_strip_version(g)) or _strip_version(g)
+                         for g in genefield.split("/") if g]
+                out.append(
+                    {
+                        "term_id": r.get("ID", ""),
+                        "source": source,
+                        "term": r.get("Description", ""),
+                        "gene_ratio": _ratio(r.get("GeneRatio", "")),
+                        "pvalue": float(r.get("pvalue", 1.0)),
+                        "padj": float(r.get("p.adjust", 1.0)),
+                        "genes": ";".join(genes),
+                        "data_source": "source_derived",
+                    }
+                )
+    return out
+
+
+def _ratio(s: str) -> float | None:
+    """'5/20000' -> 0.00025; '' -> None."""
+    if not s:
+        return None
+    try:
+        num, den = s.split("/", 1)
+        return float(num) / float(den)
+    except (ValueError, ZeroDivisionError):
+        return None

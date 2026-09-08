@@ -97,6 +97,11 @@ export interface ReferenceInfo {
 export interface DataProvenance {
   /** true = demonstration/mock data backing this project. */
   isMock: boolean;
+  /** true = artifacts on disk are produced by real pipeline execution and
+   *  served as source_derived. Independent of isMock. */
+  executionReal: boolean;
+  /** Locked semantic scope of the execution, e.g. "tutorial_mini_reference". */
+  analysisScope: string;
 }
 
 /**

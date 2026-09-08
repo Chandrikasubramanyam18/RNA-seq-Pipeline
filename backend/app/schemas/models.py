@@ -63,7 +63,15 @@ class ReferenceInfo(BaseModel):
 
 
 class DataProvenance(BaseModel):
+    # Two independent concepts (locked):
+    #   - execution_real: tool-derived artifacts exist on disk and are served
+    #     as source_derived.
+    #   - is_mock: true means "publication/full biological analysis NOT
+    #     complete". Tutorial-scale real execution keeps is_mock=true while
+    #     execution_real=true, so the two are never conflated.
     isMock: bool
+    executionReal: bool
+    analysisScope: str
 
 
 class Project(Dataset, DataProvenance):

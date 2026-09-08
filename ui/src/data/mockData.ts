@@ -521,6 +521,12 @@ export const mockProject: Project = {
   designDescription:
     "3 paired donors (N61311, N052611, N080611), each with a control and 1 uM dexamethasone-treated airway smooth muscle sample (18h), Illumina HiSeq 2000 paired-end 2x63bp.",
   isMock: true,
+  // Semantic split (locked): the pipeline HAS really executed at tutorial
+  // scale against a 3-gene mini-reference. executionReal=true means every
+  // chart/table served is source-derived from those real artifacts; isMock
+  // stays true because this is NOT publication/full biological analysis.
+  executionReal: true,
+  analysisScope: "tutorial_mini_reference",
   reference: {
     genomeAssembly: "GRCh38.p14",
     release: "GENCODE Release 44 (Ensembl 110)",

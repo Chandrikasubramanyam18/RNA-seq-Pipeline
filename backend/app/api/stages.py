@@ -15,8 +15,8 @@ _STAGE_DEFS = [
     ("metadata", "Metadata", settings.samplesheet_path, "Samplesheet validated (6 samples, 2 conditions)"),
     ("raw_qc", "Raw QC", settings.fastqc_summary_path, "FastQC output present"),
     ("preprocessing", "Preprocessing", settings.fastp_summary_path, "fastp trimming summary present"),
-    ("alignment", "Alignment", RESULTS_DIR / "alignment" / "Log.final.out", "STAR alignment - not executed"),
-    ("quantification", "Quantification", RESULTS_DIR / "salmon" / "quant.sf", "Salmon / featureCounts - not executed"),
+    ("alignment", "Alignment", RESULTS_DIR / "alignment" / "C1_Log.final.out", "STAR alignment logs present"),
+    ("quantification", "Quantification", RESULTS_DIR / "counts" / "gene_counts.txt", "featureCounts gene-level counts present"),
     ("deseq2", "DESeq2", settings.deseq2_results_path, "DESeq2 results table present"),
 ]
 

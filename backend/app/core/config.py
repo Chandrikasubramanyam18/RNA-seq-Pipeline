@@ -34,8 +34,17 @@ class Settings(BaseSettings):
     reference_manifest_path: Path = METADATA_DIR / "reference_manifest.yaml"
     fastqc_summary_path: Path = RESULTS_DIR / "fastqc" / "raw" / "fastqc_summary.tsv"
     fastp_summary_path: Path = RESULTS_DIR / "fastp" / "fastp_summary.tsv"
-    deseq2_results_path: Path = RESULTS_DIR / "differential_expression" / "deseq2_results.csv"
-    pathway_results_path: Path = RESULTS_DIR / "pathway_analysis" / "pathway_enrichment_results.csv"
+
+    # Real tutorial-scale outputs (Steps 6-9) served as source-derived.
+    deseq2_results_path: Path = (
+        RESULTS_DIR / "differential_expression" / "real_deseq2_results.csv"
+    )
+    pathway_go_dir: Path = RESULTS_DIR / "pathway_analysis"
+    star_multiqc_path: Path = (
+        RESULTS_DIR / "multiqc" / "alignment_qc" / "multiqc_report_data" / "multiqc_star.txt"
+    )
+    counts_matrix_path: Path = RESULTS_DIR / "counts" / "gene_counts.txt"
+    real_pca_path: Path = RESULTS_DIR / "visualization" / "real_pca_data.csv"
 
     model_config = SettingsConfigDict(
         env_prefix="RNAQ_",

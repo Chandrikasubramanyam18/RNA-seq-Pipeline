@@ -72,16 +72,18 @@ name: rnaseq-pipeline
 channels:
   - conda-forge
   - bioconda
+  - nodefaults
 dependencies:
   - python=3.11
-  - r-base=4.3.2
+  - r-base>=4.5,<4.7
+  - openjdk>=17
+  - nextflow>=23.10.0
   - fastqc=0.12.1
-  - fastp=0.23.4
+  - fastp=1.3.6
+  - multiqc=1.35
   - star=2.7.11b
-  - samtools=1.19.2
-  - salmon=1.10.3
-  - subread=2.0.6
-  - multiqc=1.21
+  - samtools=1.24
+  - subread=2.1.1
 ```
 
 ---
