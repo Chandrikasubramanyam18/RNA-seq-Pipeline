@@ -140,3 +140,4 @@ backend/.env
 backend/*.log
 backend/*.err.log
 
+results_nextflow/

@@ -24,7 +24,6 @@ workflow ALIGNMENT_STAR {
 
     emit:
     bam         = STAR_ALIGN.out.bam
-    bai         = STAR_ALIGN.out.bai
     log_final   = STAR_ALIGN.out.log_final
     junctions   = STAR_ALIGN.out.junctions
     index       = STAR_INDEX.out.index
