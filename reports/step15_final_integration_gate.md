@@ -28,6 +28,15 @@ No code changed in this gate — it is documentation-only. The previously valida
 - UI `npm run typecheck` + `npm run build` → clean
 - Metadata validation → PASS
 
+## Post-Phase-4 robustness fixes (validated)
+
+Two minor workflow-only fixes were discovered during the first real-pipeline run and committed after the gate:
+
+- `fd12e4a` — **STAR**: removed unused `.bai` output emit/publish (no downstream consumer; only `.bam` now published)
+- `1dcf92a` — **DESEQ2**: added `mkdir -p results/differential_expression` to the real script block (R script was always correct; stub path already did this)
+
+Both validated: stub 54/54 ✔, real run passed with real artifacts. Both repos synced at `1dcf92a`.
+
 ## Honest status (unchanged from prior gates)
 
 - **GitHub Actions has not run** in this environment (no runner/`gh` CLI) — CI is authored + locally validated only; do not call it "passed" until the Actions run is observed after a push to `origin/main`.

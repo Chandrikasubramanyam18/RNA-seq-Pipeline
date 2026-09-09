@@ -136,4 +136,21 @@ Keeping the boundary precise here is what makes the prototype scientifically hon
 | 14 | CI/CD + automated validation | ✅ PASS (locally validated; Actions pending) |
 | 15 | Phase-4 integration & boundary | ✅ PASS (this document) |
 
+---
+
+## 6. Post-Phase-4 robustness fixes (real-pipeline discovery)
+
+Two workflow issues were discovered and fixed during the first full real-pipeline run (`-profile conda` on `~/RNA-seq-Pipeline`). Both are minor robustness corrections, not behavioral changes to the analysis.
+
+| Commit | Fix | Evidence |
+|---|---|---|
+| `fd12e4a` | Remove unused STAR `.bai` output emit and publish pattern (only `.bam` published) | Stub 54/54 ✔; live run published 6 BAMs, 0 BAIs |
+| `1dcf92a` | Create `results/differential_expression` directory in DESEQ2 real script block | Stub 54/54 ✔; live run DESEQ2 1/1 with real CSV output |
+
+**What they are**: Workflow-only module corrections — the R script (`scripts/R/run_deseq2_fittype_mean.R`) was always correct; the Nextflow process wrapper needed matching `mkdir -p` in the real (non-stub) path. The STAR bai removal cleans an unused output channel that never connected to any consumer.
+
+**What they are not**: No change to the analysis logic, reference data, or published real artifacts (the real DESeq2 CSV and 6 BAMs were already correct before the commit). Both repos (Windows and Linux) are now synced at `1dcf92a`.
+
+---
+
 **Overall**: All Phase-4 components form one coherent prototype with a documented, honest boundary. The full genome-wide GSE52778 research analysis remains the explicit, separate next milestone.
