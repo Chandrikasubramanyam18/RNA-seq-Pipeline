@@ -66,6 +66,9 @@ data/reference/*
 results/*
 !results/**/.gitkeep
 
+# --- Integration test fixtures (generated at runtime, never committed) ---
+tests/integration/fixtures/
+
 # --- Python / Jupyter Environment ---
 __pycache__/
 *.py[cod]

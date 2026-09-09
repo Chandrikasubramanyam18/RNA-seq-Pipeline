@@ -1,0 +1,128 @@
+# ==============================================================================
+#  rna-seq-pipeline — GitHub Actions CI/CD (Step 14)
+# ==============================================================================
+#  Container-free CI: automated validation without building/running Docker or
+#  Apptainer images (container runtime validation remains a documented future
+#  checklist — see containers/README.md).
+#
+#  Jobs (run on every push to `main`):
+#    * unit-tests          — python unit tests for scripts/python (StdLib-only)
+#    * ui                  — React/TypeScript typecheck + production build
+#    * config-parse        — Nextflow config resolves for all 5 profiles
+#    * nextflow-stub       — Nextflow stub integration smoke test
+#    * metadata-validation — samplesheet + manifest YAML validation
+#
+#  NOTE: this workflow is authored and step-wise validated locally; actual
+#  GitHub Actions runner execution happens after push to origin/main.
+# ==============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+
+  unit-tests:
+    name: Python unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pytest
+        run: python -m pip install pytest
+      - name: Run unit tests
+        run: python -m pytest tests/unit -q
+
+  ui:
+    name: UI typecheck + build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build
+        run: npm run build
+
+  config-parse:
+    name: Nextflow config profiles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Nextflow
+        run: |
+          curl -fsSL https://get.nextflow.io | bash
+          echo "$GITHUB_WORKSPACE" >> "$GITHUB_PATH"
+      - name: Verify Nextflow
+        run: nextflow -version
+      - name: Parse all five profiles
+        run: |
+          for p in standard conda docker apptainer singularity; do
+            echo "== $p =="
+            nextflow -C workflow/nextflow.config config -profile "$p" >/dev/null
+          done
+
+  nextflow-stub:
+    name: Nextflow stub integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Nextflow
+        run: |
+          curl -fsSL https://get.nextflow.io | bash
+          echo "$GITHUB_WORKSPACE" >> "$GITHUB_PATH"
+      - name: Install pytest
+        run: python -m pip install pytest
+      - name: Run Nextflow stub integration test
+        run: python -m pytest tests/integration -q -m nextflow
+
+  metadata-validation:
+    name: Metadata validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install PyYAML
+        run: python -m pip install pyyaml
+      - name: Validate samplesheet
+        run: python scripts/python/validate_samplesheet.py metadata/samplesheet.csv
+      - name: Validate metadata manifests (YAML parse)
+        run: |
+          python - <<'PY'
+          import glob, yaml
+          files = sorted(glob.glob("metadata/*.yaml"))
+          assert files, "no metadata manifests found"
+          for f in files:
+              with open(f, encoding="utf-8") as fh:
+                  yaml.safe_load(fh)
+              print(f"YAML OK: {f}")
+          PY

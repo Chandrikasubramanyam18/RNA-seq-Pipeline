@@ -7,7 +7,7 @@
 
 A learning-focused, end-to-end bulk RNA-seq analysis platform built around the **GSE52778** dexamethasone airway smooth muscle (ASM) study. It combines a 35-chapter educational guide (`docs/`), a read-only interactive React UI (`ui/`), and a FastAPI + SQLite backend (`backend/`) that serves real DESeq2, pathway, FastQC, and fastp analysis artifacts.
 
-> **Platform status**: The interactive UI + API platform (Phases 2 & 3) is **complete and functional**. The analytical pipeline has been executed **end-to-end with real tools at tutorial scale** (50,000 read pairs/sample against a real-loci 3-gene mini-reference: STAR, SAMtools/RSeQC/MultiQC, featureCounts, DESeq2, visualization, clusterProfiler pathway analysis) — see [8. Analysis & QC](#8-analysis--qc) and the step gate reports in `reports/`. The full **Nextflow DSL2** orchestrated path is **implemented with stub-validated topology** (Step 12); **Docker/Apptainer** container definitions are **authored statically** (Step 13, pending local image builds) — see [Planned](#planned).
+> **Platform status**: The interactive UI + API platform (Phases 2 & 3) is **complete and functional**. The analytical pipeline has been executed **end-to-end with real tools at tutorial scale** (50,000 read pairs/sample against a real-loci 3-gene mini-reference: STAR, SAMtools/RSeQC/MultiQC, featureCounts, DESeq2, visualization, clusterProfiler pathway analysis) — see [8. Analysis & QC](#8-analysis--qc) and the step gate reports in `reports/`. The full **Nextflow DSL2** orchestrated path is **implemented with stub-validated topology** (Step 12); **Docker/Apptainer** container definitions are **authored statically** (Step 13, pending local image builds); **GitHub Actions CI/CD** is **implemented** (Step 14, container-free automated validation) — see [Planned](#planned).
 
 ---
 
@@ -98,6 +98,10 @@ rnaseq-pipeline/
 ├── LICENSE                            # MIT open-source license
 ├── .gitignore                         # Genomic/runtime git exclusions
 ├── .editorconfig                      # Code style and formatting standards
+├── pytest.ini                         # Pytest config (nextflow marker registration)
+│
+├── .github/workflows/                 # GitHub Actions CI/CD (Step 14)
+│   └── ci.yml                         # Unit tests, UI build, config parse, stub integration, metadata
 │
 ├── docs/                              # 35-chapter learning & reference guide
 │   ├── 00_project_overview.md         # Master syllabus / project overview
@@ -165,7 +169,8 @@ rnaseq-pipeline/
 │   └── qc_review.md                   # QC review notes
 │
 └── tests/
-    └── unit/                          # Unit tests for Python scripts (pytest)
+    ├── unit/                          # Unit tests for Python scripts (pytest)
+    └── integration/                   # Nextflow stub integration/smoke test (Step 14)
 ```
 
 ### Planned
@@ -173,8 +178,7 @@ rnaseq-pipeline/
 The following components are **not yet implemented** and should not be referenced as executable today:
 
 ```text
-.github/workflows/                 # GitHub Actions CI/CD                      → planned
-tests/integration/                 # Pipeline integration & smoke tests       → planned
+(no remaining planned source artifacts — see the roadmap gate reports in reports/)
 ```
 
 The **statistical scripts** listed below (`scripts/R/`) are now implemented and executed against real pipeline outputs (tutorial-scale):
