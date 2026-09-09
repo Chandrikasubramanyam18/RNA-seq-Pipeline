@@ -7,7 +7,7 @@
 
 A learning-focused, end-to-end bulk RNA-seq analysis platform built around the **GSE52778** dexamethasone airway smooth muscle (ASM) study. It combines a 35-chapter educational guide (`docs/`), a read-only interactive React UI (`ui/`), and a FastAPI + SQLite backend (`backend/`) that serves real DESeq2, pathway, FastQC, and fastp analysis artifacts.
 
-> **Platform status**: The interactive UI + API platform (Phases 2 & 3) is **complete and functional**. The analytical pipeline has been executed **end-to-end with real tools at tutorial scale** (50,000 read pairs/sample against a real-loci 3-gene mini-reference: STAR, SAMtools/RSeQC/MultiQC, featureCounts, DESeq2, visualization, clusterProfiler pathway analysis) — see [8. Analysis & QC](#8-analysis--qc) and the step gate reports in `reports/`. The full **Nextflow-orchestrated** execution path is still **planned** — see [Planned](#planned).
+> **Platform status**: The interactive UI + API platform (Phases 2 & 3) is **complete and functional**. The analytical pipeline has been executed **end-to-end with real tools at tutorial scale** (50,000 read pairs/sample against a real-loci 3-gene mini-reference: STAR, SAMtools/RSeQC/MultiQC, featureCounts, DESeq2, visualization, clusterProfiler pathway analysis) — see [8. Analysis & QC](#8-analysis--qc) and the step gate reports in `reports/`. The full **Nextflow DSL2** orchestrated path is **implemented with stub-validated topology** (Step 12); **Docker/Apptainer** container definitions are **authored statically** (Step 13, pending local image builds) — see [Planned](#planned).
 
 ---
 
@@ -123,6 +123,16 @@ rnaseq-pipeline/
 │   ├── src/                           # Components, API client, hooks, mock data
 │   └── package.json
 │
+├── workflow/                          # Nextflow DSL2 pipeline (Step 12, stub-validated)
+│   ├── main.nf                        # Main Nextflow workflow entry point
+│   ├── nextflow.config                # Base config & standard/conda/docker/apptainer profiles
+│   ├── modules/                       # Reusable Nextflow process modules
+│   └── subworkflows/                  # Composed modular subworkflows
+│
+├── containers/                        # Containerization (Step 13, static authorship)
+│   ├── Dockerfile                     # Docker image (Micromamba + envs/rnaseq.yml)
+│   └── rnaseq.def                     # Apptainer/Singularity definition file
+│
 ├── metadata/
 │   ├── samplesheet.csv                # Sample design table (sample, fastq_1, fastq_2, condition, replicate)
 │   ├── dataset_manifest.yaml          # Dataset provenance & download sources
@@ -163,13 +173,6 @@ rnaseq-pipeline/
 The following components are **not yet implemented** and should not be referenced as executable today:
 
 ```text
-workflow/
-├── main.nf                        # Main Nextflow workflow entry point      → planned
-├── nextflow.config                # Base Nextflow configuration & profiles  → planned
-├── modules/                       # Reusable Nextflow process modules        → planned
-└── subworkflows/                  # Composed modular subworkflows            → planned
-
-containers/                        # Dockerfile / Singularity definition files → planned
 .github/workflows/                 # GitHub Actions CI/CD                      → planned
 tests/integration/                 # Pipeline integration & smoke tests       → planned
 ```

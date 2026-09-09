@@ -1,0 +1,51 @@
+# =============================================================================
+#  rna-seq-pipeline — Apptainer (Singularity) definition file
+# =============================================================================
+#
+#  Produces a single-container .sif image containing the *exact* pinned conda
+#  stack from envs/rnaseq.yml (FastQC, fastp, STAR, SAMtools, RSeQC,
+#  featureCounts, DESeq2, clusterProfiler, visualization, MultiQC, Nextflow).
+#
+#  Build (run from the repository ROOT):
+#
+#     apptainer build rnaseq-pipeline.sif containers/rnaseq.def
+#
+#  This pulls a Micromamba base image, installs the env inside the container,
+#  and records the PATH. Nextflow then runs processes via:
+#
+#     nextflow run workflow -profile apptainer
+#     (or nextflow -profile singularity ... for older runtimes)
+#
+#  Recommended for HPC clusters where Docker is forbidden (rootless).
+#
+#  NOTE (Step 13 gate): this definition is authored but NOT built in this
+#  environment (no Apptainer/Singularity binary), so it is static/untested
+#  here. Follow containers/README.md on a machine with Apptainer before a
+#  real `-profile apptainer` run.
+# =============================================================================
+
+Bootstrap: docker
+From: mambaorg/micromamba:2
+
+%labels
+    Author Chandrika Subramanyam
+    Version 0.1.0-tutorial
+    Description Tutorial-scale RNA-seq pipeline runtime (GSE52778, 3-gene mini-reference)
+    Source https://github.com/Chandrikasubramanyam18/RNA-seq-Pipeline
+
+%environment
+    export PATH="/opt/conda/envs/rnaseq-pipeline/bin:${PATH}"
+    export CONDA_DEFAULT_ENV="rnaseq-pipeline"
+    export TZ="Etc/UTC"
+
+%files
+    envs/rnaseq.yml /tmp/rnaseq.yml
+
+%post
+    # envs/rnaseq.yml is staged via %files (build from the repo ROOT).
+    micromamba create -y -f /tmp/rnaseq.yml
+    micromamba clean -ay
+    rm -f /tmp/rnaseq.yml
+
+%runscript
+    exec bash "$@"
