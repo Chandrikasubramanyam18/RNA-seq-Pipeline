@@ -2,13 +2,14 @@
 #  rna-seq-pipeline — Apptainer (Singularity) definition file
 # =============================================================================
 #
-#  Produces a single-container .sif image containing the *exact* pinned conda
-#  stack from envs/rnaseq.yml (FastQC, fastp, STAR, SAMtools, RSeQC,
-#  featureCounts, DESeq2, clusterProfiler, visualization, MultiQC, Nextflow).
+#  Produces a single-container .sif image containing the *exact* conda
+#  environment declared in envs/rnaseq.yml (a version-constrained,
+#  validated tool stack: FastQC, fastp, STAR, SAMtools, RSeQC, featureCounts,
+#  DESeq2, clusterProfiler, visualization, MultiQC, Nextflow).
 #
 #  Build (run from the repository ROOT):
 #
-#     apptainer build rnaseq-pipeline.sif containers/rnaseq.def
+#     apptainer build rnaseq-pipeline_0.1.0-tutorial.sif containers/rnaseq.def
 #
 #  This pulls a Micromamba base image, installs the env inside the container,
 #  and records the PATH. Nextflow then runs processes via:

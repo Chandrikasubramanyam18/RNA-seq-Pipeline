@@ -306,8 +306,8 @@ The results are browsable through the read-only React dashboard backed by the Fa
 
 ## 11. Reproducibility & Versioning
 
-To ensure strict scientific reproducibility:
-1. **Pinned Dependencies**: Conda/Docker dependency versions are pinned in `envs/rnaseq.yml`.
+To support scientific reproducibility:
+1. **Version-constrained Dependencies**: Conda/Docker dependency versions are declared in `envs/rnaseq.yml` — most core tools are exact-pinned, while the language runtimes and Python scientific stack use version constraints (`>=`/ranges). Exact per-build resolution locking (e.g. `conda-lock`) is a future enhancement.
 2. **Fixed Random Seeds**: Stochastic algorithms (e.g., DESeq2 PCA, GSEA permutations) use documented random seeds (`set.seed(42)`).
 3. **Reference Provenance**: Genome build, Ensembl/GENCODE release, and source checksums are tracked in `metadata/reference_manifest.yaml`.
 4. **Git Versioning**: Revisions are tagged with semantic release versions.

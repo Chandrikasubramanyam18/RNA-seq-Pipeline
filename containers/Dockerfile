@@ -3,9 +3,10 @@
 # =============================================================================
 #
 #  Builds a single runtime image that contains the *exact* conda environment
-#  defined in envs/rnaseq.yml (the pinned, validated tool stack used for the
-#  tutorial-scale run: FastQC, fastp, STAR, SAMtools, RSeQC, featureCounts,
-#  DESeq2, clusterProfiler, visualization, MultiQC, plus Nextflow itself).
+#  defined in envs/rnaseq.yml (the version-constrained, validated tool stack
+#  used for the tutorial-scale run: FastQC, fastp, STAR, SAMtools, RSeQC,
+#  featureCounts, DESeq2, clusterProfiler, visualization, MultiQC, plus
+#  Nextflow itself).
 #
 #  Usage (build from the repository ROOT so envs/rnaseq.yml is in context):
 #
@@ -23,7 +24,7 @@
 # =============================================================================
 
 # --- Base image: Micromamba (conda-forge) --------------------------------
-# Slim, fast, rootless-friendly; installs the pinned stack below.
+# Slim, fast, rootless-friendly; installs the declared stack below.
 FROM mambaorg/micromamba:2
 
 # --- Metadata ------------------------------------------------------------
@@ -35,7 +36,7 @@ LABEL org.opencontainers.image.licenses="MIT"
 
 ARG CONDA_ENV_FILE=envs/rnaseq.yml
 
-# --- Install the pinned conda environment --------------------------------
+# --- Install the conda environment (version-constrained spec) -------------
 # envs/rnaseq.yml is at the repo root; the build context MUST be the repo root.
 COPY --chown=$MAMBA_USER:$MAMBA_USER "$CONDA_ENV_FILE" /tmp/rnaseq.yml
 
