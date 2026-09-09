@@ -7,7 +7,7 @@
 
 A learning-focused, end-to-end bulk RNA-seq analysis platform built around the **GSE52778** dexamethasone airway smooth muscle (ASM) study. It combines a 35-chapter educational guide (`docs/`), a read-only interactive React UI (`ui/`), and a FastAPI + SQLite backend (`backend/`) that serves real DESeq2, pathway, FastQC, and fastp analysis artifacts.
 
-> **Platform status**: The interactive UI + API platform (Phases 2 & 3) is **complete and functional**. The analytical pipeline has been executed **end-to-end with real tools at tutorial scale** (50,000 read pairs/sample against a real-loci 3-gene mini-reference: STAR, SAMtools/RSeQC/MultiQC, featureCounts, DESeq2, visualization, clusterProfiler pathway analysis) — see [8. Analysis & QC](#8-analysis--qc) and the step gate reports in `reports/`. The full **Nextflow DSL2** orchestrated path is **implemented with stub-validated topology** (Step 12); **Docker/Apptainer** container definitions are **authored statically** (Step 13, pending local image builds); **GitHub Actions CI/CD** is **implemented** (Step 14, container-free automated validation) — see [Planned](#planned).
+> **Platform status**: The interactive UI + API platform (Phases 2 & 3) is **complete and functional**. The analytical pipeline has been executed **end-to-end with real tools at tutorial scale** (50,000 read pairs/sample against a real-loci 3-gene mini-reference: STAR, SAMtools/RSeQC/MultiQC, featureCounts, DESeq2, visualization, clusterProfiler pathway analysis) — see [8. Analysis & QC](#8-analysis--qc) and the step gate reports in `reports/`. The full **Nextflow DSL2** orchestrated path is **implemented with stub-validated topology** (Step 12); **Docker/Apptainer** container definitions are **authored statically** (Step 13, pending local image builds); **GitHub Actions CI/CD** is **implemented** (Step 14, container-free automated validation); and **Phase 4 integration & boundary is documented** (Step 15, [`reports/phase4_integration.md`](reports/phase4_integration.md)) — see [Planned](#planned). The concurrent `executionReal: true` / `isMock: true` flag is deliberate: real tools ran at tutorial scale, but this is **not** publication-grade genome-wide biological inference.
 
 ---
 
@@ -39,7 +39,7 @@ The primary biological objective of this platform is to answer:
 The analysis is built around a multi-replicate experimental design (Control `C1, C2, C3` vs Treatment `T1, T2, T3`), ensuring rigorous statistical control for biological variability.
 
 ### Target Pipeline Workflow
-The following is the target end-to-end analytical design (implemented via the UI/API; the full Nextflow execution path is planned):
+The following is the target end-to-end analytical design (implemented via the UI/API and re-expressed as the Nextflow DSL2 workflow in `workflow/`):
 
 ```
 Raw FASTQ Reads (Paired-End / Single-End)
@@ -130,6 +130,7 @@ rnaseq-pipeline/
 ├── workflow/                          # Nextflow DSL2 pipeline (Step 12, stub-validated)
 │   ├── main.nf                        # Main Nextflow workflow entry point
 │   ├── nextflow.config                # Base config & standard/conda/docker/apptainer profiles
+│   ├── README.md                      # How-to-run guide (params, profiles, -stub vs real)
 │   ├── modules/                       # Reusable Nextflow process modules
 │   └── subworkflows/                  # Composed modular subworkflows
 │
@@ -166,7 +167,10 @@ rnaseq-pipeline/
 ├── results/                           # Pipeline outputs (organized by analytical step)
 ├── reports/
 │   ├── preprocessing_review.md        # Preprocessing review notes
-│   └── qc_review.md                   # QC review notes
+│   ├── qc_review.md                   # QC review notes
+│   ├── step4_alignment_gate.md … step9_pathway_gate.md   # Real execution gate reports
+│   ├── phase4_integration.md          # Phase 4 integration & boundary doc (Step 15)
+│   └── final_report/                  # Consolidated real-pipeline final report (Step 10)
 │
 └── tests/
     ├── unit/                          # Unit tests for Python scripts (pytest)
@@ -201,7 +205,7 @@ The *currently running* components require only:
 * **Node.js / npm** — for the `ui/` dashboard.
 * **bash / POSIX shell** — only if running the Linux-tooling steps locally (preferred in WSL2 on Windows).
 
-For the **planned** locally-executed Nextflow pipeline, you will additionally need: a POSIX environment (Linux / WSL2 / Docker), Nextflow >= 23.04.0, Java >= 11, R >= 4.3, and container runtimes (Docker / Singularity). See [`docs/10_reproducibility/`](docs/10_reproducibility/) and [`docs/11_infrastructure/linux.md`](docs/11_infrastructure/linux.md).
+For the **Nextflow** pipeline (`workflow/`), you will additionally need: a POSIX environment (Linux / WSL2), Nextflow >= 23.10.0, Java 17+, and — for a real run — the tools/scripts from `envs/rnaseq.yml` (`-profile conda`) or a container built from `containers/` (`-profile docker`/`apptainer`/`singularity`). See [`workflow/README.md`](workflow/README.md) for run instructions, and [`docs/10_reproducibility/`](docs/10_reproducibility/) and [`docs/11_infrastructure/linux.md`](docs/11_infrastructure/linux.md) for guidance.
 
 ---
 
@@ -320,9 +324,11 @@ To support scientific reproducibility:
 
 ## 12. Testing & Quality Assurance
 
-* Python unit tests via `pytest` in [`tests/unit/`](tests/unit/).
+* Python unit tests via `pytest` in [`tests/unit/`](tests/unit/) (StdLib-only, no external deps).
+* Nextflow stub integration/smoke test in [`tests/integration/`](tests/integration/) (marker `nextflow`; runs `-stub -profile standard` and asserts key artifacts are published).
 * Metadata/samplesheet validation for missing files, invalid headers, and mismatched read pairs.
 * `ui/` is verified with `npm run typecheck` and `npm run build`.
+* **CI/CD** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml), Step 14) runs 5 container-free jobs on push to `main`: unit tests, UI typecheck/build, Nextflow config parsing (all 5 profiles), the Nextflow stub integration test, and metadata validation. It is authored and locally validated; GitHub Actions execution follows each push to `main`.
 
 ---
 
