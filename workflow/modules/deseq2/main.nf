@@ -34,7 +34,7 @@ process DESEQ2 {
 
     script:
     """
-    mkdir -p results/counts
+    mkdir -p results/counts results/differential_expression
     cp ${counts} results/counts/gene_counts.txt
     Rscript ${script}
     """
